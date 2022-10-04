@@ -41,8 +41,12 @@ fpWin::GameState -> Bool
 fpWin (GameState {firstPlayer = fp, secondPlayer = (0,0), turn = SecondPlayer}) = (countAllFingers fp) > 0
 fpWin _ = False
 
+eqWin::GameState -> Bool
+eqWin (GameState {firstPlayer = fp, secondPlayer = (0,0), turn = SecondPlayer}) = (countAllFingers fp) == 0
+eqWin _ = False
+
 spWin::GameState -> Bool
-spWin = reverseState fpWin
+spWin s = not (eqWin s) && (fpWin (reverseState s))
 
 possibleState :: GameState -> Bool
 possibleState (GameState {firstPlayer = (fpl,fpr), secondPlayer = (spl,spr), turn = _}) = fpl <= 5 && fpr <=5 && spl <=5 && spr <= 5
@@ -50,5 +54,11 @@ possibleState (GameState {firstPlayer = (fpl,fpr), secondPlayer = (spl,spr), tur
 generateturns :: GameState -> [GameState]
 generateturns (GameState {firstPlayer = fp@(fleftHand,frightHand), secondPlayer = sp@(sleftHand,srightHand), turn = FirstPlayer}) = filter possibleState allturns
     where
-        splitHand = [ GameState {firstPlayer = (nfleftHand,nfrightHand) secondPlayer = _ , SecondPlayer} | nfleftHand = nfrightHand = (countAllFingers sp) / 2, even (countAllFingers sp) ]
-        
+        splitHand = [ GameState {firstPlayer = (half,half), secondPlayer = sp , turn = SecondPlayer} | let half = (countAllFingers fp) `div` 2, even (countAllFingers fp) ]
+        touchLeftWithLeft = [ GameState {firstPlayer = fp, secondPlayer = (changed,srightHand), turn = SecondPlayer} | let changed = sleftHand - fleftHand, fleftHand > 0]
+        touchRightWithLeft = [ GameState {firstPlayer = fp, secondPlayer = (sleftHand,changed), turn = SecondPlayer} | let changed = srightHand - fleftHand, fleftHand > 0]
+        touchLeftWithRight = [ GameState {firstPlayer = fp, secondPlayer = (changed,srightHand), turn = SecondPlayer} | let changed = sleftHand - frightHand, frightHand > 0]
+        touchRightWithRight = [ GameState {firstPlayer = fp, secondPlayer = (sleftHand,changed), turn = SecondPlayer} | let changed = srightHand - frightHand, frightHand > 0]
+        allturns = concat [splitHand,touchLeftWithLeft,touchLeftWithRight,touchRightWithLeft,touchRightWithRight]
+
+
